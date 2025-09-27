@@ -7,6 +7,7 @@ from services.mongodb import MongoDBService
 
 async def get_mongo_service():
     service = MongoDBService()
+
     try:
         yield service
     finally:

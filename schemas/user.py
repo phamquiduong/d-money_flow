@@ -1,11 +1,14 @@
-from pydantic import BaseModel, Field
+from pydantic import Field
 
+from schemas.base import MongoModel
 from services.password import PasswordService
 
 
-class UserModel(BaseModel):
+class UserModel(MongoModel):
     username: str
     password: str = 'not set'
+
+    mongodb_collection = 'users'
 
     def set_password(self, plain_password: str) -> None:
         password_service = PasswordService()
@@ -15,12 +18,8 @@ class UserModel(BaseModel):
         password_service = PasswordService()
         return password_service.verify_password(plain_password=plain_password, hashed_password=self.password)
 
-    class Meta:
-        mongodb_collection = 'users'
-
 
 class User(UserModel):
-    username: str
     password: str = Field(default='not set', exclude=True)
 
     @classmethod
