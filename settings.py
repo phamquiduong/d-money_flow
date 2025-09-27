@@ -7,3 +7,4 @@ if not load_dotenv():
 
 
 MONGO_URI = os.environ['MONGO_URI']
+DB_NAME = os.environ['DB_NAME']

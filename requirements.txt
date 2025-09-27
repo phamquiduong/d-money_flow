@@ -1,4 +1,5 @@
-fastapi==0.117.1
-uvicorn==0.37.0
-pymongo[srv]==4.15.1
-python-dotenv==1.1.1
+fastapi
+uvicorn
+pymongo[srv]
+python-dotenv
+bcrypt
