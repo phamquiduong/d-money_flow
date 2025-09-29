@@ -15,5 +15,5 @@ ALGORITHM = os.getenv('ALGORITHM', 'HS256')
 
 TIMEZONE = os.getenv('TIMEZONE', 'Asia/Ho_Chi_Minh')
 
-ACCESS_EXP = timedelta(minutes=5)
-REFRESH_EXP = timedelta(days=1)
+ACCESS_EXPIRED = timedelta(minutes=5)
+REFRESH_EXPIRED = timedelta(days=1)

@@ -12,9 +12,9 @@ logger = logging.getLogger()
 
 
 class MongoDBService:
-    def __init__(self) -> None:
-        self.client = AsyncMongoClient(MONGO_URI, server_api=ServerApi('1'))
-        self.db = self.client[DB_NAME]
+    def __init__(self, mongo_uri: str = MONGO_URI, db_name: str = DB_NAME) -> None:
+        self.client = AsyncMongoClient(mongo_uri, server_api=ServerApi('1'))
+        self.db = self.client.get_database(db_name)
 
     async def ping(self) -> None:
         try:
@@ -24,11 +24,7 @@ class MongoDBService:
             logger.exception('Cannot connect to MongoDB with uri: %s', MONGO_URI)
 
     async def create_index(
-        self,
-        model: type[MongoModel],
-        name: str,
-        keys: list[tuple[str, int]],
-        unique: bool = False
+        self, model: type[MongoModel], name: str, keys: list[tuple[str, int]], unique: bool = False
     ) -> str:
         collection = self._get_collection(model)
         return await collection.create_index(keys, unique=unique, name=name)
@@ -39,14 +35,14 @@ class MongoDBService:
 
     async def insert_one_model(self, data: MongoModel) -> str:
         collection = self._get_collection(data.__class__)
-        result = await collection.insert_one(data.model_dump())
+        result = await collection.insert_one(data.model_dump_to_mongodb())
         return str(result.inserted_id)
 
     async def insert_many_models(self, list_data: list[MongoModel]) -> list[str]:
         if not list_data:
             return []
         collection = self._get_collection(list_data[0].__class__)
-        docs = [data.model_dump() for data in list_data]
+        docs = [data.model_dump_to_mongodb() for data in list_data]
         result = await collection.insert_many(docs)
         return [str(inserted_id) for inserted_id in result.inserted_ids]
 

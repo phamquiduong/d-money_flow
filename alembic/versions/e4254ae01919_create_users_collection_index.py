@@ -10,7 +10,7 @@ from typing import Sequence, Union
 
 from pymongo import ASCENDING
 
-from schemas.user import UserModel
+from schemas.user import User
 from services.mongodb import MongoDBService
 
 # revision identifiers, used by Alembic.
@@ -23,11 +23,11 @@ mongodb_service = MongoDBService()
 
 
 async def do_upgrade():
-    await mongodb_service.create_index(UserModel, keys=[('username', ASCENDING)], unique=True, name='username_index')
+    await mongodb_service.create_index(User, keys=[('username', ASCENDING)], unique=True, name='username_index')
 
 
 async def do_downgrade():
-    await mongodb_service.drop_index(UserModel, name='username_index')
+    await mongodb_service.drop_index(User, name='username_index')
 
 
 def upgrade() -> None:

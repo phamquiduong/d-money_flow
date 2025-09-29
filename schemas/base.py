@@ -1,13 +1,14 @@
-from typing import ClassVar
+import uuid
+from typing import Any, ClassVar
 
 from bson import ObjectId
-from pydantic import BaseModel, Field, model_validator
+from pydantic import UUID4, BaseModel, Field, model_validator
 
 from utils.name import camel_to_snake
 
 
 class MongoModel(BaseModel):
-    id: str = Field(default='not set', exclude=True)
+    id: UUID4 = Field(default_factory=uuid.uuid4)
 
     mongodb_collection: ClassVar[str | None] = None
 
@@ -16,7 +17,11 @@ class MongoModel(BaseModel):
     def handle_objectid(cls, data: dict) -> dict:
         if '_id' in data and isinstance(data['_id'], ObjectId):
             data['id'] = str(data.pop('_id'))
+        return data
 
+    def model_dump_to_mongodb(self) -> dict[str, Any]:
+        data = super().model_dump()
+        data['_id'] = str(data.pop('id'))
         return data
 
     @classmethod
