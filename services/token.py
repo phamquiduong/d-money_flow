@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 import jwt
+from bson import ObjectId
 from pydantic import BaseModel
 
 from settings import ALGORITHM, SECRET_KEY
@@ -13,7 +14,7 @@ from utils import timezone
 class TokenService:
     class Encoder(json.JSONEncoder):
         def default(self, o):
-            if isinstance(o, uuid.UUID):
+            if isinstance(o, (uuid.UUID, ObjectId)):
                 return str(o)
             return super().default(o)
 

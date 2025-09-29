@@ -26,41 +26,44 @@ class MongoDBService:
     async def create_index(
         self, model: type[MongoModel], name: str, keys: list[tuple[str, int]], unique: bool = False
     ) -> str:
-        collection = self._get_collection(model)
+        collection = self.__get_collection(model)
         return await collection.create_index(keys, unique=unique, name=name)
 
     async def drop_index(self, model: type[MongoModel], name: str) -> None:
-        collection = self._get_collection(model)
+        collection = self.__get_collection(model)
         return await collection.drop_index(name)
 
-    async def insert_one_model(self, data: MongoModel) -> str:
-        collection = self._get_collection(data.__class__)
-        result = await collection.insert_one(data.model_dump_to_mongodb())
-        return str(result.inserted_id)
+    async def insert_one_model(self, data: MongoModel) -> None:
+        collection = self.__get_collection(data.__class__)
+        result = await collection.insert_one(data.model_dump(exclude={'id'}))
+        data.id = str(result.inserted_id)
 
-    async def insert_many_models(self, list_data: list[MongoModel]) -> list[str]:
+    async def insert_many_models(self, list_data: list[MongoModel]) -> None:
         if not list_data:
-            return []
-        collection = self._get_collection(list_data[0].__class__)
-        docs = [data.model_dump_to_mongodb() for data in list_data]
+            return None
+
+        collection = self.__get_collection(list_data[0].__class__)
+        docs = [data.model_dump(exclude={'id'}) for data in list_data]
+
         result = await collection.insert_many(docs)
-        return [str(inserted_id) for inserted_id in result.inserted_ids]
+        for model, inserted_id in zip(list_data, result.inserted_ids):
+            model.id = str(inserted_id)
 
     async def find_by_id(self, model: type[MongoModel], object_id: str) -> MongoModel | None:
-        collection = self._get_collection(model)
+        collection = self.__get_collection(model)
         doc = await collection.find_one({'_id': ObjectId(object_id)})
-        return model(**doc) if doc else None
+        return model.model_validate(doc) if doc else None
 
-    async def find_one(self, model: type[MongoModel], **query) -> MongoModel | None:
-        collection = self._get_collection(model)
-        doc = await collection.find_one(query)
-        return model(**doc) if doc else None
+    async def find_one(self, model: type[MongoModel], **queries) -> MongoModel | None:
+        collection = self.__get_collection(model)
+        doc = await collection.find_one(queries)
+        return model.model_validate(doc) if doc else None
 
-    async def find_many(self, model: type[MongoModel], **query) -> list[MongoModel]:
-        collection = self._get_collection(model)
-        cursor = collection.find(query)
-        return [model(**doc) async for doc in cursor]
+    async def find_many(self, model: type[MongoModel], **queries) -> list[MongoModel]:
+        collection = self.__get_collection(model)
+        cursor = collection.find(queries)
+        return [model.model_validate(doc) async for doc in cursor]
 
-    def _get_collection(self, model: type[MongoModel]) -> AsyncCollection:
+    def __get_collection(self, model: type[MongoModel]) -> AsyncCollection:
         collection_name = model.get_mongodb_collection()
         return self.db[collection_name]

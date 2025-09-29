@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import StrEnum
 
-from pydantic import UUID4, BaseModel
+from pydantic import BaseModel
 
 
 class TokenType(StrEnum):
@@ -10,7 +10,7 @@ class TokenType(StrEnum):
 
 
 class TokenPayload(BaseModel):
-    sub: UUID4
+    sub: str
     type: TokenType
 
 

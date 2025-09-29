@@ -30,4 +30,4 @@ class UserResponse(User):
 
     @classmethod
     def from_model(cls, user: User):
-        return cls(**user.model_dump())
+        return cls.model_validate(user.model_dump())
