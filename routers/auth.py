@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Body, HTTPException, status
 
 from dependencies.mongodb import MongoDBDep
-from schemas.token import Token, TokenPayload, TokenResponse, TokenType
+from schemas.token import TokenPayload, TokenResponse, TokenType
 from schemas.user import User, UserResponse
 from services.token import TokenService
-from settings import ACCESS_EXPIRED, REFRESH_EXPIRED
 
 auth_router = APIRouter(prefix='/auth', tags=['Authentication'])
 
@@ -39,13 +38,24 @@ async def login(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Password is incorrect')
 
     token_service = TokenService()
+    return token_service.create_token_response(user)
 
-    token, expired = \
-        token_service.encode(data=TokenPayload(sub=user.id, type=TokenType.ACCESS), exp_delta=ACCESS_EXPIRED)
-    access = Token(token=token, expired=expired)
 
-    token, expired = \
-        token_service.encode(data=TokenPayload(sub=user.id, type=TokenType.REFRESH), exp_delta=REFRESH_EXPIRED)
-    refresh = Token(token=token, expired=expired)
+@auth_router.post('/refresh')
+async def refresh_token(
+    mongo: MongoDBDep,
+    token: str = Body()
+) -> TokenResponse:
+    token_service = TokenService()
+    payload = token_service.decode(token=token)
+    token_payload = TokenPayload.model_validate(payload)
 
-    return TokenResponse(access=access, refresh=refresh)
+    if token_payload.type != TokenType.REFRESH:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Refresh token required')
+
+    user: User | None = await mongo.find_by_id(User, token_payload.sub)  # type:ignore
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User does not exist')
+
+    return token_service.create_token_response(user)
