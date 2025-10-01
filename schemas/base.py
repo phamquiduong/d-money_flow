@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from bson import ObjectId
 from pydantic import BaseModel, Field, model_validator
@@ -20,3 +20,6 @@ class MongoModel(BaseModel):
     @classmethod
     def get_mongodb_collection(cls) -> str:
         return cls.mongodb_collection or camel_to_snake(cls.__name__)
+
+    def model_dump_mongo(self, *args, **kwargs) -> dict[str, Any]:
+        return super().model_dump(*args, **kwargs, exclude_none=True, exclude={'id'})

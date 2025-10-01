@@ -2,7 +2,7 @@ import datetime
 
 import pytz
 
-from settings import TIMEZONE
+from configs.settings import TIMEZONE
 
 DEFAULT_TIMEZONE = pytz.timezone(TIMEZONE)
 

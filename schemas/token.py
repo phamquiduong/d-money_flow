@@ -1,12 +1,8 @@
 from datetime import datetime
-from enum import StrEnum
 
 from pydantic import BaseModel
 
-
-class TokenType(StrEnum):
-    ACCESS = 'access'
-    REFRESH = 'refresh'
+from constants.token_type import TokenType
 
 
 class TokenPayload(BaseModel):

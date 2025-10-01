@@ -1,29 +1,16 @@
-import logging
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 
+from configs.handle_exc import handle_exc
+from configs.logger import config_logging
 from routers.auth import auth_router
-from services.mongodb import MongoDBService
+from routers.users import users_router
 
-# Config log
-logging.basicConfig(
-    level=logging.INFO,
-    format='[%(levelname)s] [%(asctime)s] [%(filename)s:%(lineno)d] %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
+# Config logging
+config_logging()
 
-
-# Ping MongoDB
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    mongodb_service = MongoDBService()
-    await mongodb_service.ping()
-    await mongodb_service.client.close()
-    yield
-
-app = FastAPI(lifespan=lifespan)
-
+app = FastAPI()
+handle_exc(app)
 
 # Include routers
 app.include_router(auth_router)
+app.include_router(users_router)

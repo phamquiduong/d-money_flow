@@ -1,33 +1,29 @@
+from typing import Any
+
 from pydantic import Field
 
+from constants.user_role import UserRoles
 from schemas.base import MongoModel
 from services.password import PasswordService
 
 
 class User(MongoModel):
     username: str
-    password: str
+    password: str = Field(default_factory=lambda: '<not set>', exclude=True)
+
+    role: UserRoles = UserRoles.GUEST
 
     mongodb_collection = 'users'
 
-    @staticmethod
-    def create_password(plain_password: str) -> str:
+    def set_password(self, plain_password: str) -> None:
         password_service = PasswordService()
-        return password_service.hash_password(plain_password)
+        self.password = password_service.hash_password(plain_password)
 
     def verify(self, plain_password: str) -> bool:
         password_service = PasswordService()
         return password_service.verify_password(plain_password=plain_password, hashed_password=self.password)
 
-    @classmethod
-    def create(cls, username: str, plain_password: str):
-        password = cls.create_password(plain_password)
-        return cls(username=username, password=password)
-
-
-class UserResponse(User):
-    password: str = Field(exclude=True)
-
-    @classmethod
-    def from_model(cls, user: User):
-        return cls.model_validate(user.model_dump())
+    def model_dump_mongo(self, *args, **kwargs) -> dict[str, Any]:
+        dump_data = super().model_dump_mongo(*args, **kwargs)
+        dump_data.update({'password': self.password})
+        return dump_data

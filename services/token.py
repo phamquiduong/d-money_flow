@@ -7,9 +7,10 @@ import jwt
 from bson import ObjectId
 from pydantic import BaseModel
 
-from schemas.token import Token, TokenPayload, TokenResponse, TokenType
+from configs.settings import ACCESS_EXPIRED, ALGORITHM, REFRESH_EXPIRED, SECRET_KEY
+from constants.token_type import TokenType
+from schemas.token import Token, TokenPayload, TokenResponse
 from schemas.user import User
-from settings import ACCESS_EXPIRED, ALGORITHM, REFRESH_EXPIRED, SECRET_KEY
 from utils import timezone
 
 

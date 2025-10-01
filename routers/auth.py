@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Body, HTTPException, status
 
+from constants.token_type import TokenType
 from dependencies.mongodb import MongoDBDep
-from schemas.token import TokenPayload, TokenResponse, TokenType
-from schemas.user import User, UserResponse
+from schemas.token import TokenPayload, TokenResponse
+from schemas.user import User
 from services.token import TokenService
 
 auth_router = APIRouter(prefix='/auth', tags=['Authentication'])
@@ -13,14 +14,15 @@ async def register_user(
     mongo: MongoDBDep,
     username: str = Body(),
     password: str = Body(),
-) -> UserResponse:
+) -> User:
     if await mongo.find_one(User, username=username):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='User already exists')
 
-    user = User.create(username=username, plain_password=password)
+    user = User(username=username)
+    user.set_password(plain_password=password)
     await mongo.insert_one_model(user)
 
-    return UserResponse.from_model(user)
+    return user
 
 
 @auth_router.post('/login')
@@ -29,13 +31,13 @@ async def login(
     username: str = Body(),
     password: str = Body(),
 ) -> TokenResponse:
-    user: User | None = await mongo.find_one(User, username=username)  # type:ignore
+    user = await mongo.find_one(User, username=username)
 
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User does not exist')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='User not found')
 
     if not user.verify(plain_password=password):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Password is incorrect')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid password')
 
     token_service = TokenService()
     return token_service.create_token_response(user)
@@ -53,9 +55,9 @@ async def refresh_token(
     if token_payload.type != TokenType.REFRESH:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Refresh token required')
 
-    user: User | None = await mongo.find_by_id(User, token_payload.sub)  # type:ignore
+    user = await mongo.find_by_id(User, token_payload.sub)
 
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User does not exist')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='User not found')
 
     return token_service.create_token_response(user)

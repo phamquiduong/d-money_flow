@@ -1,11 +1,19 @@
 @echo off
 
+REM Set up environment variables for server
+cd ./configs
+if not exist ".env" (
+    echo Copying .env.example to .env...
+    copy .env.example .env
+)
+cd ..
+
 @REM Install Python package
-pip install -r requirements.txt
+pip install -r .\.docs\requirements.txt
 cls
 
 @REM Run migrate
-alembic upgrade head
+alembic -c ./.migrations/alembic.ini upgrade head
 
 @REM Run server
 uvicorn main:app --reload

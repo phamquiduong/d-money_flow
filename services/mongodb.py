@@ -1,14 +1,15 @@
-import logging
+from typing import TypeVar
 
 from bson import ObjectId
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.server_api import ServerApi
 
+from configs.logger import logger
+from configs.settings import DB_NAME, MONGO_URI
 from schemas.base import MongoModel
-from settings import DB_NAME, MONGO_URI
 
-logger = logging.getLogger()
+T = TypeVar("T", bound=MongoModel)
 
 
 class MongoDBService:
@@ -26,44 +27,50 @@ class MongoDBService:
     async def create_index(
         self, model: type[MongoModel], name: str, keys: list[tuple[str, int]], unique: bool = False
     ) -> str:
-        collection = self.__get_collection(model)
+        collection = self._get_collection(model)
         return await collection.create_index(keys, unique=unique, name=name)
 
     async def drop_index(self, model: type[MongoModel], name: str) -> None:
-        collection = self.__get_collection(model)
+        collection = self._get_collection(model)
         return await collection.drop_index(name)
 
     async def insert_one_model(self, data: MongoModel) -> None:
-        collection = self.__get_collection(data.__class__)
-        result = await collection.insert_one(data.model_dump(exclude={'id'}))
+        collection = self._get_collection(data.__class__)
+        result = await collection.insert_one(data.model_dump_mongo())
         data.id = str(result.inserted_id)
 
     async def insert_many_models(self, list_data: list[MongoModel]) -> None:
         if not list_data:
             return None
 
-        collection = self.__get_collection(list_data[0].__class__)
-        docs = [data.model_dump(exclude={'id'}) for data in list_data]
+        collection = self._get_collection(list_data[0].__class__)
+        docs = [data.model_dump_mongo() for data in list_data]
 
         result = await collection.insert_many(docs)
         for model, inserted_id in zip(list_data, result.inserted_ids):
             model.id = str(inserted_id)
 
-    async def find_by_id(self, model: type[MongoModel], object_id: str) -> MongoModel | None:
-        collection = self.__get_collection(model)
+    async def find_by_id(self, model: type[T], object_id: str) -> T | None:
+        collection = self._get_collection(model)
         doc = await collection.find_one({'_id': ObjectId(object_id)})
         return model.model_validate(doc) if doc else None
 
-    async def find_one(self, model: type[MongoModel], **queries) -> MongoModel | None:
-        collection = self.__get_collection(model)
+    async def find_one(self, model: type[T], **queries) -> T | None:
+        collection = self._get_collection(model)
+        queries = self._clean_queries(queries)
         doc = await collection.find_one(queries)
         return model.model_validate(doc) if doc else None
 
-    async def find_many(self, model: type[MongoModel], **queries) -> list[MongoModel]:
-        collection = self.__get_collection(model)
-        cursor = collection.find(queries)
+    async def find_many(self, model: type[T], limit: int = 10, offset: int = 0, **queries) -> list[T]:
+        collection = self._get_collection(model)
+        queries = self._clean_queries(queries)
+        cursor = collection.find(queries).skip(offset).limit(limit)
         return [model.model_validate(doc) async for doc in cursor]
 
-    def __get_collection(self, model: type[MongoModel]) -> AsyncCollection:
+    def _get_collection(self, model: type[MongoModel]) -> AsyncCollection:
         collection_name = model.get_mongodb_collection()
         return self.db[collection_name]
+
+    @staticmethod
+    def _clean_queries(queries: dict):
+        return {field: value for field, value in queries.items() if value}
