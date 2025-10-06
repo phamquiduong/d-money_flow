@@ -11,7 +11,7 @@ async def get_mongo_service():
     try:
         yield service
     finally:
-        await service.client.close()
+        await service.close()
 
 
 MongoDBDep = Annotated[MongoDBService, Depends(get_mongo_service)]

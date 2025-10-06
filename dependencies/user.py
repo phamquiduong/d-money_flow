@@ -6,7 +6,6 @@ from fastapi.security import OAuth2PasswordBearer
 from constants.token_type import TokenType
 from constants.user_role import UserRoles
 from dependencies.mongodb import MongoDBDep
-from schemas.token import TokenPayload
 from schemas.user import User
 from services.token import TokenService
 
@@ -17,9 +16,8 @@ async def get_current_user(
     mongo: MongoDBDep,
     token: str = Depends(oauth2_scheme),
 ) -> User:
-    token_service = TokenService()
-    payload = token_service.decode(token=token)
-    token_payload = TokenPayload.model_validate(payload)
+    token_service = TokenService(mongo=mongo)
+    token_payload = await token_service.decode_payload(token)
 
     if token_payload.type != TokenType.ACCESS:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Access token required')
@@ -31,12 +29,15 @@ async def get_current_user(
 
     return user
 
+
 UserDep = Annotated[User, Depends(get_current_user)]
 
 
 async def get_admin_user(user: UserDep):
     if user.role != UserRoles.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Admin access required')
+
     return user
+
 
 AdminUserDep = Annotated[User, Depends(get_admin_user)]

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Path, status
+from fastapi import APIRouter, HTTPException, Path, Query, status
 
 from constants.user_role import UserRoles
 from dependencies.mongodb import MongoDBDep
@@ -11,9 +11,11 @@ users_router = APIRouter(prefix='/users', tags=['User'])
 @users_router.get('')
 async def get_all_users(
     mongo: MongoDBDep,
-    admin_user: AdminUserDep
+    admin_user: AdminUserDep,
+    limit: int = Query(10, gt=0),
+    offset: int = Query(0, ge=0),
 ) -> list[User]:
-    return await mongo.find_many(User)
+    return await mongo.find_many(User, limit=limit, offset=offset)
 
 
 @users_router.get('/me')
