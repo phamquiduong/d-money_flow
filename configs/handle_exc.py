@@ -7,7 +7,7 @@ from configs.logger import logger
 
 async def token_error_handler(request: Request, exc: InvalidTokenError):
     return JSONResponse(
-        {'detail': 'Could not validate credentials'},
+        {'detail': 'Token is invalid'},
         status_code=status.HTTP_401_UNAUTHORIZED,
         headers={'WWW-Authenticate': 'Bearer'}
     )

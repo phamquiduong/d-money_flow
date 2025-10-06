@@ -1,17 +1,17 @@
 import json
 import uuid
-from datetime import timedelta
 from typing import Any
 
 import jwt
 from bson import ObjectId
+from fastapi import HTTPException, status
 from pydantic import BaseModel
 
-from configs.settings import ACCESS_EXPIRED, ALGORITHM, REFRESH_EXPIRED, SECRET_KEY
+from configs.settings import ALGORITHM, SECRET_KEY
 from constants.token_type import TokenType
-from schemas.token import Token, TokenPayload, TokenResponse
+from schemas.token import Token, TokenPayload, TokenResponse, WhiteListToken
 from schemas.user import User
-from utils import timezone
+from services.mongodb import MongoDBService
 
 
 class JWTService:
@@ -25,35 +25,51 @@ class JWTService:
         self.secret_key = secret_key
         self.algorithm = algorithm
 
-    def encode(
-        self, data: dict[str, Any] | BaseModel, exp_delta: timedelta | None = None
-    ) -> tuple[str, dict[str, Any]]:
-        to_encode = data.model_dump() if isinstance(data, BaseModel) else data.copy()
-        to_encode['jti'] = uuid.uuid4()
-        to_encode['iat'] = timezone.now()
-
-        if exp_delta:
-            to_encode['exp'] = to_encode['iat'] + exp_delta
-
-        token = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm, json_encoder=self.Encoder)
-        return token, to_encode
+    def encode(self, data: dict[str, Any] | BaseModel) -> str:
+        to_encode = data.model_dump(exclude_none=True) if isinstance(data, BaseModel) else data.copy()
+        return jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm, json_encoder=self.Encoder)
 
     def decode(self, token: str) -> dict[str, Any]:
         return jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
 
 
 class TokenService(JWTService):
+    def __init__(self, mongo: MongoDBService, *args, **kwargs) -> None:
+        self.mongo = mongo
+        super().__init__(*args, **kwargs)
+
     def create_access_token(self, user: User) -> Token:
-        token, to_encode = \
-            self.encode(data=TokenPayload(sub=user.id, type=TokenType.ACCESS), exp_delta=ACCESS_EXPIRED)
-        return Token(token=token, expired=to_encode['exp'])
+        payload = TokenPayload.access(user)
+        token = self.encode(payload)
+        return Token(token=token, expired=payload.exp)
 
-    def create_refresh_token(self, user: User) -> Token:
-        token, to_encode = \
-            self.encode(data=TokenPayload(sub=user.id, type=TokenType.REFRESH), exp_delta=REFRESH_EXPIRED)
-        return Token(token=token, expired=to_encode['exp'])
+    async def create_refresh_token(self, user: User) -> Token:
+        payload = TokenPayload.refresh(user)
+        token = self.encode(payload)
 
-    def create_token_response(self, user: User) -> TokenResponse:
+        await self.mongo.insert_object(WhiteListToken(jti=payload.jti, user_id=user.id, expired=payload.exp))
+
+        return Token(token=token, expired=payload.exp)
+
+    async def create_token_response(self, user: User) -> TokenResponse:
         access = self.create_access_token(user)
-        refresh = self.create_refresh_token(user)
+        refresh = await self.create_refresh_token(user)
         return TokenResponse(access=access, refresh=refresh)
+
+    async def decode_payload(self, token: str) -> TokenPayload:
+        payload = self.decode(token)
+        token_payload = TokenPayload.model_validate(payload)
+
+        if (
+            token_payload.type == TokenType.REFRESH
+            and not await self.mongo.find_one(WhiteListToken, jti=token_payload.jti)
+        ):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token is revoked')
+
+        return token_payload
+
+    async def revoke(self, jti: str) -> None:
+        await self.mongo.delete_one(WhiteListToken, jti=jti)
+
+    async def revoke_all(self, user_id: str) -> None:
+        await self.mongo.delete_many(WhiteListToken, _user_id=ObjectId(user_id))

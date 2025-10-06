@@ -16,14 +16,12 @@ class User(MongoModel):
     mongodb_collection = 'users'
 
     def set_password(self, plain_password: str) -> str:
-        password_service = PasswordService()
-        new_password_hash = password_service.hash_password(plain_password)
+        new_password_hash = PasswordService.hash_password(plain_password)
         self.password = new_password_hash
         return new_password_hash
 
     def verify(self, plain_password: str) -> bool:
-        password_service = PasswordService()
-        return password_service.verify_password(plain_password=plain_password, hashed_password=self.password)
+        return PasswordService.verify_password(plain_password=plain_password, hashed_password=self.password)
 
     def model_dump_mongo(self, *args, **kwargs) -> dict[str, Any]:
         dump_data = super().model_dump_mongo(*args, **kwargs)

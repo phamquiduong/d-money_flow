@@ -11,7 +11,7 @@ from typing import Sequence, Union
 from pymongo import ASCENDING
 
 from schemas.user import User
-from services.mongodb import MongoDBService
+from services.mongodb import mongodb_service
 
 # revision identifiers, used by Alembic.
 revision: str = 'e4254ae01919'
@@ -19,15 +19,15 @@ down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-mongodb_service = MongoDBService()
-
 
 async def do_upgrade():
-    await mongodb_service.create_index(User, keys=[('username', ASCENDING)], unique=True, name='username_index')
+    async with mongodb_service() as mongo:
+        await mongo.create_index(User, keys=[('username', ASCENDING)], unique=True, name='username_index')
 
 
 async def do_downgrade():
-    await mongodb_service.drop_index(User, name='username_index')
+    async with mongodb_service() as mongo:
+        await mongo.drop_index(User, name='username_index')
 
 
 def upgrade() -> None:
