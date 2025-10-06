@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import Field
 
-from constants.user_role import UserRoles
+from constants.user_role import UserRole
 from schemas.base import MongoModel
 from services.password import PasswordService
 
@@ -11,7 +11,7 @@ class User(MongoModel):
     username: str
     password: str = Field(default_factory=lambda: '<not set>', exclude=True)
 
-    role: UserRoles = UserRoles.GUEST
+    role: UserRole = UserRole.GUEST
 
     mongodb_collection = 'users'
 

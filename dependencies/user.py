@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
 from constants.token_type import TokenType
-from constants.user_role import UserRoles
+from constants.user_role import UserRole
 from dependencies.mongodb import MongoDBDep
 from schemas.user import User
 from services.token import TokenService
@@ -34,7 +34,7 @@ UserDep = Annotated[User, Depends(get_current_user)]
 
 
 async def get_admin_user(user: UserDep):
-    if user.role != UserRoles.ADMIN:
+    if user.role != UserRole.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Admin access required')
 
     return user
