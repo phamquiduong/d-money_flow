@@ -67,6 +67,10 @@ class MongoDBService:
         cursor = collection.find(queries).skip(offset).limit(limit)
         return [model.model_validate(doc) async for doc in cursor]
 
+    async def update_by_id(self, mongo_model: MongoModel, **update_data) -> None:
+        collection = self._get_collection(mongo_model.__class__)
+        await collection.update_one({'_id': ObjectId(mongo_model.id)}, {"$set": update_data})
+
     def _get_collection(self, model: type[MongoModel]) -> AsyncCollection:
         collection_name = model.get_mongodb_collection()
         return self.db[collection_name]

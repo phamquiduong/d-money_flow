@@ -15,9 +15,11 @@ class User(MongoModel):
 
     mongodb_collection = 'users'
 
-    def set_password(self, plain_password: str) -> None:
+    def set_password(self, plain_password: str) -> str:
         password_service = PasswordService()
-        self.password = password_service.hash_password(plain_password)
+        new_password_hash = password_service.hash_password(plain_password)
+        self.password = new_password_hash
+        return new_password_hash
 
     def verify(self, plain_password: str) -> bool:
         password_service = PasswordService()
