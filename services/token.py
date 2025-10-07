@@ -4,11 +4,13 @@ from typing import Any
 
 import jwt
 from bson import ObjectId
-from fastapi import HTTPException, status
+from fastapi import status
 from pydantic import BaseModel
 
 from configs.settings import ALGORITHM, SECRET_KEY
+from constants.header import BEARER_ERROR_HEADER
 from constants.token_type import TokenType
+from exceptions.api_exception import APIException
 from schemas.token import Token, TokenPayload, TokenResponse, WhiteListToken
 from schemas.user import User
 from services.mongodb import MongoDBService
@@ -64,7 +66,8 @@ class TokenService(JWTService):
             token_payload.type == TokenType.REFRESH
             and not await self.mongo.find_one(WhiteListToken, jti=token_payload.jti)
         ):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token is revoked')
+            raise APIException(status_code=status.HTTP_401_UNAUTHORIZED,
+                               detail='Token is revoked', headers=BEARER_ERROR_HEADER)
 
         return token_payload
 

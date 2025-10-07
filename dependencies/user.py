@@ -1,11 +1,13 @@
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, status
 from fastapi.security import OAuth2PasswordBearer
 
+from constants.header import BEARER_ERROR_HEADER
 from constants.token_type import TokenType
 from constants.user_role import UserRole
 from dependencies.mongodb import MongoDBDep
+from exceptions.api_exception import APIException
 from schemas.user import User
 from services.token import TokenService
 
@@ -20,12 +22,13 @@ async def get_current_user(
     token_payload = await token_service.decode_payload(token)
 
     if token_payload.type != TokenType.ACCESS:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Access token required')
+        raise APIException(status_code=status.HTTP_400_BAD_REQUEST,
+                           detail='Access token required', headers=BEARER_ERROR_HEADER)
 
     user = await mongo.find_by_id(User, token_payload.sub)
 
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
+        raise APIException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found', headers=BEARER_ERROR_HEADER)
 
     return user
 
@@ -35,7 +38,8 @@ UserDep = Annotated[User, Depends(get_current_user)]
 
 async def get_admin_user(user: UserDep):
     if user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Admin access required')
+        raise APIException(status_code=status.HTTP_403_FORBIDDEN,
+                           detail='Admin access required', headers=BEARER_ERROR_HEADER)
 
     return user
 
