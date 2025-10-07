@@ -31,9 +31,7 @@ async def get_current_user(
     if not user:
         raise APIException(status_code=status.HTTP_404_NOT_FOUND,
                            detail=messages.user_not_found, headers=BEARER_ERROR_HEADER)
-
     return user
-
 
 UserDep = Annotated[User, Depends(get_current_user)]
 
@@ -42,8 +40,15 @@ async def get_admin_user(user: UserDep):
     if user.role != UserRole.ADMIN:
         raise APIException(status_code=status.HTTP_403_FORBIDDEN,
                            detail=messages.admin_required, headers=BEARER_ERROR_HEADER)
-
     return user
 
-
 AdminUserDep = Annotated[User, Depends(get_admin_user)]
+
+
+async def get_current_or_admin_user(user: UserDep, user_id: str):
+    if user.role != UserRole.ADMIN and user.id != user_id:
+        raise APIException(status_code=status.HTTP_403_FORBIDDEN,
+                           detail=messages.current_or_admin_required,  headers=BEARER_ERROR_HEADER)
+    return user
+
+CurrentOrAdminUserDep = Annotated[User, Depends(get_current_or_admin_user)]

@@ -10,7 +10,7 @@ from constants.regex import USERNAME_REGEX
 def validate_username(username: str) -> str:
     if not re.match(USERNAME_REGEX, username):
         raise ValueError(messages.username_regex_error)
-    return username
+    return username.lower()
 
 
 UsernameField = Annotated[str, AfterValidator(validate_username), Field(min_length=4, max_length=32)]
