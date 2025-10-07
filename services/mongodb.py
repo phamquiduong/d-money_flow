@@ -11,7 +11,7 @@ from configs.settings import DB_NAME, MONGO_URI
 from constants.mongo import MongoUpdateType
 from schemas.base import MongoModel
 
-T = TypeVar("T", bound=MongoModel)
+T = TypeVar('T', bound=MongoModel)
 
 
 class MongoDBService:

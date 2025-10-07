@@ -6,8 +6,8 @@ from fastapi import Depends, Query
 class ListQuery:
     def __init__(
         self,
-        limit: int = Query(10, gt=0, description='Number of items to return'),
-        offset: int = Query(0, ge=0, description='Number of items to skip'),
+        limit: int = Query(10, gt=0, le=100),
+        offset: int = Query(0, ge=0),
         order_by: str | None = Query(None, description='Sort field (use -field for descending, e.g. -created_at)'),
     ):
         self.limit = limit

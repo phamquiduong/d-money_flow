@@ -3,12 +3,13 @@ from typing import Annotated
 
 from pydantic import AfterValidator, Field
 
+import messages
 from constants.regex import USERNAME_REGEX
 
 
 def validate_username(username: str) -> str:
     if not re.match(USERNAME_REGEX, username):
-        raise ValueError('Invalid username format')
+        raise ValueError(messages.username_regex_error)
     return username
 
 

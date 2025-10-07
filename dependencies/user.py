@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import Depends, status
 from fastapi.security import OAuth2PasswordBearer
 
+import messages
 from constants.header import BEARER_ERROR_HEADER
 from constants.token_type import TokenType
 from constants.user_role import UserRole
@@ -23,12 +24,13 @@ async def get_current_user(
 
     if token_payload.type != TokenType.ACCESS:
         raise APIException(status_code=status.HTTP_400_BAD_REQUEST,
-                           detail='Access token required', headers=BEARER_ERROR_HEADER)
+                           detail=messages.access_required, headers=BEARER_ERROR_HEADER)
 
     user = await mongo.find_by_id(User, token_payload.sub)
 
     if not user:
-        raise APIException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found', headers=BEARER_ERROR_HEADER)
+        raise APIException(status_code=status.HTTP_404_NOT_FOUND,
+                           detail=messages.user_not_found, headers=BEARER_ERROR_HEADER)
 
     return user
 
@@ -39,7 +41,7 @@ UserDep = Annotated[User, Depends(get_current_user)]
 async def get_admin_user(user: UserDep):
     if user.role != UserRole.ADMIN:
         raise APIException(status_code=status.HTTP_403_FORBIDDEN,
-                           detail='Admin access required', headers=BEARER_ERROR_HEADER)
+                           detail=messages.admin_required, headers=BEARER_ERROR_HEADER)
 
     return user
 

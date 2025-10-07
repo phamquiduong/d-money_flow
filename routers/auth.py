@@ -1,6 +1,7 @@
 from fastapi import APIRouter, status
 from jwt import InvalidTokenError
 
+import messages
 from constants.token_type import TokenType
 from dependencies.mongodb import MongoDBDep
 from dependencies.user import UserDep
@@ -22,8 +23,8 @@ async def register_user(
     request: RegisterRequest,
 ) -> User:
     if await mongo.find_one(User, username=request.username):
-        raise APIException(status_code=status.HTTP_409_CONFLICT, detail='User already exists',
-                           fields={'username': 'Username already exists'})
+        raise APIException(status_code=status.HTTP_409_CONFLICT,
+                           detail=messages.user_exists, fields={'username': messages.user_exists})
 
     user = User(username=request.username)
     user.set_password(plain_password=request.password)
@@ -40,12 +41,12 @@ async def login(
     user = await mongo.find_one(User, username=request.username)
 
     if not user:
-        raise APIException(status_code=status.HTTP_401_UNAUTHORIZED, detail='User not found',
-                           fields={'username': 'Username not found'})
+        raise APIException(status_code=status.HTTP_401_UNAUTHORIZED,
+                           detail=messages.user_not_found, fields={'username': messages.user_not_found})
 
     if not user.verify(plain_password=request.password):
-        raise APIException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Password incorrect',
-                           fields={'password': 'Password is incorrect'})
+        raise APIException(status_code=status.HTTP_401_UNAUTHORIZED,
+                           detail=messages.password_incorrect, fields={'password': messages.password_incorrect})
 
     token_service = TokenService(mongo=mongo)
     return await token_service.create_token_response(user)
@@ -62,17 +63,17 @@ async def refresh_token(
         token_payload = await token_service.decode_payload(request.token)
     except (InvalidTokenError, APIException) as exc:
         raise APIException(status_code=status.HTTP_400_BAD_REQUEST,
-                           detail='Token is invalid', fields={'token': str(exc)}) from exc
+                           detail=messages.token_invalid, fields={'token': str(exc)}) from exc
 
     if token_payload.type != TokenType.REFRESH:
         raise APIException(status_code=status.HTTP_400_BAD_REQUEST,
-                           detail='Refresh token required', fields={'token': 'Refresh token required'})
+                           detail=messages.token_invalid, fields={'token': messages.refresh_required})
 
     user = await mongo.find_by_id(User, token_payload.sub)
 
     if not user:
-        raise APIException(status_code=status.HTTP_401_UNAUTHORIZED,
-                           detail='User not found', fields={'token': 'User in token not found'})
+        raise APIException(status_code=status.HTTP_404_NOT_FOUND,
+                           detail=messages.token_invalid, fields={'token': messages.user_not_found})
 
     await token_service.revoke(jti=token_payload.jti)
     return await token_service.create_token_response(user)
@@ -86,12 +87,12 @@ async def change_password(
 ):
     if request.current_password == request.new_password:
         raise APIException(status_code=status.HTTP_400_BAD_REQUEST,
-                           detail='The new password is the same as the current password',
-                           fields={'new_password': 'The new password is the same as the current password'})
+                           detail=messages.new_password_same_current,
+                           fields={'new_password': messages.new_password_same_current})
 
     if not user.verify(plain_password=request.current_password):
-        raise APIException(status_code=status.HTTP_400_BAD_REQUEST, detail='The current password is incorrect',
-                           fields={'current_password': 'The current password is incorrect'})
+        raise APIException(status_code=status.HTTP_400_BAD_REQUEST,
+                           detail=messages.password_incorrect, fields={'current_password': messages.password_incorrect})
 
     new_password_hash = user.set_password(plain_password=request.new_password)
     await mongo.update_object(user, password=new_password_hash)

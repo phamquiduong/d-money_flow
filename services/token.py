@@ -1,3 +1,4 @@
+import messages
 import json
 import uuid
 from typing import Any
@@ -67,7 +68,7 @@ class TokenService(JWTService):
             and not await self.mongo.find_one(WhiteListToken, jti=token_payload.jti)
         ):
             raise APIException(status_code=status.HTTP_401_UNAUTHORIZED,
-                               detail='Token is revoked', headers=BEARER_ERROR_HEADER)
+                               detail=messages.token_revoked, headers=BEARER_ERROR_HEADER)
 
         return token_payload
 

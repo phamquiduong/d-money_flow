@@ -3,12 +3,13 @@ from typing import Annotated
 
 from pydantic import AfterValidator, Field
 
+import messages
 from constants.regex import PASSWORD_REGEX
 
 
 def validate_password(password: str) -> str:
     if not re.match(PASSWORD_REGEX, password):
-        raise ValueError('Invalid password format')
+        raise ValueError(messages.pass_regex_err)
     return password
 
 

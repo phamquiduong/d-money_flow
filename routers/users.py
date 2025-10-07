@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Path, status
 
+import messages
 from constants.header import BEARER_ERROR_HEADER
 from constants.user_role import UserRole
 from dependencies.mongodb import MongoDBDep
@@ -38,10 +39,11 @@ async def get_user_profile(
 
     if current_user.role != UserRole.ADMIN:
         raise APIException(status_code=status.HTTP_403_FORBIDDEN,
-                           detail='You do not have permission to access this resource.', headers=BEARER_ERROR_HEADER)
+                           detail=messages.current_or_admin_required, headers=BEARER_ERROR_HEADER)
 
     user = await mongo.find_by_id(User, object_id=user_id)
     if not user:
-        raise APIException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found', headers=BEARER_ERROR_HEADER)
+        raise APIException(status_code=status.HTTP_404_NOT_FOUND,
+                           detail=messages.user_not_found, headers=BEARER_ERROR_HEADER)
 
     return user

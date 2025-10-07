@@ -12,8 +12,11 @@ class FieldError(BaseModel):
 
 
 class ErrorResponse(BaseModel):
-    status_code: int = status.HTTP_400_BAD_REQUEST
-    error_code: str = 'invalid'
-    message: str = 'Bad Request'
+    status_code: int
+    message: str
     details: list[FieldError] = Field(default_factory=list)
     timestamp: datetime = Field(default_factory=timezone.now)
+
+    def model_dump(self, *args, **kwargs):
+        kwargs.setdefault('mode', 'json')
+        return super().model_dump(*args, **kwargs)
