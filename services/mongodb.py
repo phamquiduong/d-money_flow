@@ -90,9 +90,8 @@ class MongoDBService:
         collection = self.__get_collection(model)
         await collection.update_many(queries, {update_type.value: update_data})
 
-    async def update_object(self, obj: MongoModel,
-                            update_type: MongoUpdateType = MongoUpdateType.SET, **update_data) -> None:
-        await self.update_one(obj.__class__, queries={'_id': ObjectId(obj.id)}, update_type=update_type, **update_data)
+    async def update_object(self, obj: MongoModel) -> None:
+        await self.update_one(obj.__class__, queries={'_id': ObjectId(obj.id)}, **obj.model_dump_mongo())
 
     # ****************************************
     # Delete

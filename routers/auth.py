@@ -94,8 +94,8 @@ async def change_password(
         raise APIException(status_code=status.HTTP_400_BAD_REQUEST,
                            detail=messages.password_incorrect, fields={'current_password': messages.password_incorrect})
 
-    new_password_hash = user.set_password(plain_password=request.new_password)
-    await mongo.update_object(user, password=new_password_hash)
+    user.set_password(plain_password=request.new_password)
+    await mongo.update_object(user)
 
     token_service = TokenService(mongo=mongo)
     await token_service.revoke_all(user_id=user.id)
