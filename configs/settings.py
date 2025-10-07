@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # Load env file
-env_file = BASE_DIR / 'configs/.env'
+env_file = BASE_DIR / '.docs/.env'
 if not load_dotenv(env_file):
     raise FileNotFoundError(f'.env file does not exist: {env_file}')
 

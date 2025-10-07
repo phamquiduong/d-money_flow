@@ -1,7 +1,7 @@
 @echo off
 
 REM Set up environment variables for server
-cd ./configs
+cd ./.docs
 if not exist ".env" (
     echo Copying .env.example to .env...
     copy .env.example .env
