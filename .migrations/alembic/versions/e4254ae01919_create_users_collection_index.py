@@ -10,7 +10,7 @@ from typing import Sequence, Union
 
 from pymongo import ASCENDING
 
-from schemas.user import User
+from models.user import User
 from services.mongodb import mongodb_service
 
 # revision identifiers, used by Alembic.

@@ -8,8 +8,9 @@ from bson import ObjectId
 from pydantic import BaseModel
 
 from configs.settings import ALGORITHM, SECRET_KEY
-from schemas.token import Token, TokenPayload, TokenResponse, WhiteListToken
-from schemas.user import User
+from models.user import User
+from models.whitelist_token import WhiteListToken
+from schemas.token import Token, TokenPayload, TokenResponse
 from services.mongodb import MongoDBService
 
 

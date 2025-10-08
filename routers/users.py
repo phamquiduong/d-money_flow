@@ -4,11 +4,11 @@ import messages
 from dependencies.token import TokenServiceDep
 from dependencies.user import AdminUserDep, CurrentOrAdminUserDep, UserDep, UserServiceDep
 from exceptions.api_exception import APIException
+from models.user import User
 from schemas.api.change_password import ChangePasswordRequest
 from schemas.api.list_query import ListQueryDep
 from schemas.api.user_create import UserCreateRequest
 from schemas.api.user_update import UserUpdateRequest
-from schemas.user import User
 
 users_router = APIRouter(prefix='/users', tags=['User'])
 

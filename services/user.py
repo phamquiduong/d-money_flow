@@ -1,6 +1,6 @@
 from typing import Any
 
-from schemas.user import User
+from models.user import User
 from services.mongodb import MongoDBService
 
 

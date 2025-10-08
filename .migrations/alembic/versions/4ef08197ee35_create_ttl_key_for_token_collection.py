@@ -10,7 +10,7 @@ from typing import Sequence, Union
 
 from pymongo import ASCENDING
 
-from schemas.token import WhiteListToken
+from models.whitelist_token import WhiteListToken
 from services.mongodb import mongodb_service
 
 # revision identifiers, used by Alembic.

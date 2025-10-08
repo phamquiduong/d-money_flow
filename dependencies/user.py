@@ -11,7 +11,7 @@ from constants.user_role import UserRole
 from dependencies.mongodb import MongoDBDep
 from dependencies.token import TokenServiceDep
 from exceptions.api_exception import APIException
-from schemas.user import User
+from models.user import User
 from services.user import UserService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
