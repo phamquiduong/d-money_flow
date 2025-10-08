@@ -22,15 +22,15 @@ async def login(
     user = await user_service.get_by_username(request.username)
 
     if not user:
-        raise APIException(status_code=status.HTTP_401_UNAUTHORIZED,
+        raise APIException(status_code=status.HTTP_400_BAD_REQUEST,
                            detail=messages.user_not_found, fields={'username': messages.user_not_found})
 
     if not await user_service.is_valid(user):
-        raise APIException(status_code=status.HTTP_401_UNAUTHORIZED,
+        raise APIException(status_code=status.HTTP_400_BAD_REQUEST,
                            detail=messages.user_not_valid, fields={'username': messages.user_not_valid})
 
     if await user_service.verify_password(user=user, password=request.password):
-        raise APIException(status_code=status.HTTP_401_UNAUTHORIZED,
+        raise APIException(status_code=status.HTTP_400_BAD_REQUEST,
                            detail=messages.password_incorrect, fields={'password': messages.password_incorrect})
 
     return await token_service.create_token_response(user)
@@ -59,7 +59,7 @@ async def refresh_token(
     user = await user_service.get_by_id(token_payload.sub)
 
     if not user:
-        raise APIException(status_code=status.HTTP_404_NOT_FOUND,
+        raise APIException(status_code=status.HTTP_400_BAD_REQUEST,
                            detail=messages.token_invalid, fields={'token': messages.user_not_found})
 
     await token_service.revoke(jti=token_payload.jti)

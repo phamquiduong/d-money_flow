@@ -1,18 +1,11 @@
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from jwt.exceptions import InvalidTokenError
 
 import messages
 from configs.logger import logger
-from constants.header import BEARER_ERROR_HEADER
 from exceptions.api_exception import APIException
 from schemas.api.error import ErrorResponse, FieldError
-
-
-async def token_error_handler(request: Request, exc: InvalidTokenError):
-    err_res = ErrorResponse(status_code=status.HTTP_401_UNAUTHORIZED, message=messages.token_invalid)
-    return JSONResponse(err_res.model_dump(), status_code=err_res.status_code, headers=BEARER_ERROR_HEADER)
 
 
 async def validation_error_handler(request: Request, exc: RequestValidationError):
@@ -48,7 +41,6 @@ async def exception_handler(request: Request, exc: Exception):
 
 
 def handle_exc(app: FastAPI):
-    app.add_exception_handler(InvalidTokenError, token_error_handler)                   # type: ignore
     app.add_exception_handler(RequestValidationError, validation_error_handler)         # type: ignore
     app.add_exception_handler(APIException, api_exception_handler)                      # type: ignore
     app.add_exception_handler(HTTPException, http_exception_handler)                    # type: ignore
