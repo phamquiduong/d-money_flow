@@ -13,15 +13,6 @@ from schemas.api.user_update import UserUpdateRequest
 users_router = APIRouter(prefix='/users', tags=['User'])
 
 
-@users_router.get('')
-async def get_all_users(
-    auth_user: AdminUserDep,
-    user_service: UserServiceDep,
-    list_query: ListQueryDep,
-) -> list[User]:
-    return await user_service.get_list(limit=list_query.limit, offset=list_query.offset)
-
-
 @users_router.post('', status_code=status.HTTP_201_CREATED)
 async def register_user(
     user_service: UserServiceDep,
@@ -31,6 +22,15 @@ async def register_user(
         raise APIException(status_code=status.HTTP_409_CONFLICT,
                            detail=messages.user_exists, fields={'username': messages.user_exists})
     return await user_service.create(username=request.username, password=request.password)
+
+
+@users_router.get('')
+async def get_all_users(
+    auth_user: AdminUserDep,
+    user_service: UserServiceDep,
+    list_query: ListQueryDep,
+) -> list[User]:
+    return await user_service.get_list(limit=list_query.limit, offset=list_query.offset)
 
 
 @users_router.get('/me')
@@ -84,7 +84,7 @@ async def change_password(
                            detail=messages.new_password_same_current,
                            fields={'new_password': messages.new_password_same_current})
 
-    if not await user_service.verify_password(user=auth_user, password=request.new_password):
+    if not await user_service.verify_password(user=auth_user, password=request.current_password):
         raise APIException(status_code=status.HTTP_400_BAD_REQUEST,
                            detail=messages.password_incorrect, fields={'current_password': messages.password_incorrect})
 

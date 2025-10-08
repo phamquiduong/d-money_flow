@@ -46,6 +46,7 @@ class TokenService(JWTService):
     async def create_refresh_token(self, user: User) -> Token:
         payload = TokenPayload.refresh(user)
         token = self.encode(payload)
+        await self.set_to_whitelist(jti=payload.jti, user_id=user.id, expired=payload.exp)
         return Token(token=token, expired=payload.exp)
 
     async def create_token_response(self, user: User) -> TokenResponse:
@@ -57,7 +58,7 @@ class TokenService(JWTService):
         payload = self.decode(token)
         return TokenPayload.model_validate(payload)
 
-    async def is_revoke(self, jti: str) -> bool:
+    async def is_revoked(self, jti: str) -> bool:
         return await self.mongo.find_one(WhiteListToken, jti=jti) is None
 
     async def set_to_whitelist(self, jti: str, user_id: str, expired: datetime) -> WhiteListToken:

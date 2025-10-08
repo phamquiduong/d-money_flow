@@ -29,7 +29,7 @@ async def login(
         raise APIException(status_code=status.HTTP_400_BAD_REQUEST,
                            detail=messages.user_not_valid, fields={'username': messages.user_not_valid})
 
-    if await user_service.verify_password(user=user, password=request.password):
+    if not await user_service.verify_password(user=user, password=request.password):
         raise APIException(status_code=status.HTTP_400_BAD_REQUEST,
                            detail=messages.password_incorrect, fields={'password': messages.password_incorrect})
 
@@ -48,7 +48,7 @@ async def refresh_token(
         raise APIException(status_code=status.HTTP_400_BAD_REQUEST,
                            detail=messages.token_invalid, fields={'token': str(exc)}) from exc
 
-    if await token_service.is_revoke(jti=token_payload.jti):
+    if await token_service.is_revoked(jti=token_payload.jti):
         raise APIException(status_code=status.HTTP_400_BAD_REQUEST,
                            detail=messages.token_invalid, fields={'token': messages.token_revoked})
 

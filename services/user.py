@@ -21,11 +21,11 @@ class UserService:
         return user.verify(plain_password=password)
 
     async def is_exist_id(self, user_id: str) -> bool:
-        user = self.get_by_id(user_id)
+        user = await self.get_by_id(user_id)
         return user is not None
 
     async def is_exist_username(self, username: str) -> bool:
-        user = self.get_by_username(username)
+        user = await self.get_by_username(username)
         return user is not None
 
     async def get_list(self, limit: int, offset: int) -> list[User]:
