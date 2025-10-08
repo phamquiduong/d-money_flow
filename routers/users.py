@@ -91,3 +91,20 @@ async def change_password(
     await user_service.update_password(auth_user, new_password=request.new_password)
 
     await token_service.revoke_all(user_id=auth_user.id)
+
+
+@users_router.delete('/{user_id}', status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(
+    auth_user: CurrentOrAdminUserDep,
+    user_service: UserServiceDep,
+    token_service: TokenServiceDep,
+    user_id: str = Path(),
+) -> None:
+    user = auth_user if auth_user.id == user_id else await user_service.get_by_id(user_id)
+
+    if not user:
+        raise APIException(status_code=status.HTTP_404_NOT_FOUND,
+                           detail=messages.user_not_found, fields={'user_id': messages.user_not_found})
+
+    await user_service.delete(user)
+    await token_service.revoke_all(user_id=user_id)

@@ -46,3 +46,6 @@ class UserService:
         user.set_password(plain_password=new_password)
         await self.mongo.update_object(user)
         return user
+
+    async def delete(self, user: User):
+        await self.mongo.delete_object(user)
