@@ -28,8 +28,8 @@ class UserService:
         user = await self.get_by_username(username)
         return user is not None
 
-    async def get_list(self, limit: int, offset: int) -> list[User]:
-        return await self.mongo.find_many(User, limit=limit, offset=offset)
+    async def get_list(self, limit: int, offset: int, order_by: str | None = None) -> list[User]:
+        return await self.mongo.find_many(User, limit=limit, offset=offset, order_by=order_by)
 
     async def create(self, username: str, password: str) -> User:
         user = User(username=username)

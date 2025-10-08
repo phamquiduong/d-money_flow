@@ -1,14 +1,17 @@
 from contextlib import asynccontextmanager
-from typing import Any, TypeVar
+from typing import Any, Literal, TypeVar
 
 from bson import ObjectId
-from pymongo import AsyncMongoClient
+from fastapi import status
+from pymongo import ASCENDING, DESCENDING, AsyncMongoClient
 from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.server_api import ServerApi
 
+import messages
 from configs.logger import logger
 from configs.settings import DB_NAME, MONGO_URI
 from constants.mongo import MongoUpdateType
+from exceptions.api_exception import APIException
 from schemas.base import MongoModel
 
 T = TypeVar('T', bound=MongoModel)
@@ -68,10 +71,13 @@ class MongoDBService:
         doc = await collection.find_one(queries)
         return model.model_validate(doc) if doc else None
 
-    async def find_many(self, model: type[T], limit: int = 10, offset: int = 0, **queries) -> list[T]:
+    async def find_many(
+        self, model: type[T], limit: int = 10, offset: int = 0, order_by: str | None = None, **queries
+    ) -> list[T]:
         collection = self.__get_collection(model)
         queries = self.__clean_queries(queries)
-        docs = collection.find(queries).skip(offset).limit(limit)
+        sort_params = self.__convert_order_by(model.allowed_order_fields, order_by)
+        docs = collection.find(queries).skip(offset).limit(limit).sort(sort_params)
         return [model.model_validate(doc) async for doc in docs]
 
     async def find_by_id(self, model: type[T], object_id: str) -> T | None:
@@ -117,6 +123,37 @@ class MongoDBService:
     @staticmethod
     def __clean_queries(queries: dict):
         return {field: value for field, value in queries.items() if value}
+
+    @staticmethod
+    def __convert_order_by(
+        allow_order: list | tuple | set, order_by: str | None = None, raise_exc: bool = True
+    ) -> list[tuple[str, Literal[1, -1]]]:
+        if not order_by:
+            return []
+
+        order_fields = order_by.split(',')
+        order_params = []
+
+        for order_field in order_fields:
+            order_field = order_field.strip()
+
+            if order_field.startswith('-'):
+                order_field = order_field[1:]
+                direction = DESCENDING
+            else:
+                direction = ASCENDING
+
+            if order_field not in allow_order and raise_exc:
+                message = messages.not_allowed_order_by.format(field=order_field)
+                raise APIException(status_code=status.HTTP_400_BAD_REQUEST,
+                                   detail=message, fields={'order_by': message})
+
+            if order_field == 'id':
+                order_field = '_id'
+
+            order_params.append((order_field, direction))
+
+        return order_params
 
 
 @asynccontextmanager

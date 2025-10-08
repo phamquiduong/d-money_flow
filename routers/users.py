@@ -30,7 +30,7 @@ async def get_all_users(
     user_service: UserServiceDep,
     list_query: ListQueryDep,
 ) -> list[User]:
-    return await user_service.get_list(limit=list_query.limit, offset=list_query.offset)
+    return await user_service.get_list(limit=list_query.limit, offset=list_query.offset, order_by=list_query.order_by)
 
 
 @users_router.get('/me')

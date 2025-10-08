@@ -14,6 +14,7 @@ class User(MongoModel):
     role: UserRole = UserRole.GUEST
 
     mongodb_collection = 'users'
+    allowed_order_fields = ('id', 'username')
 
     def set_password(self, plain_password: str) -> None:
         self.password = PasswordService.hash_password(plain_password)

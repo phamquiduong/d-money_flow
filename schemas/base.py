@@ -8,7 +8,9 @@ from utils.name import camel_to_snake
 
 class MongoModel(BaseModel):
     id: str = Field(default_factory=lambda: '<not created>')
+
     mongodb_collection: ClassVar[str | None] = None
+    allowed_order_fields: ClassVar[list[str] | tuple[str, ...] | set[str]] = ()
 
     @model_validator(mode='before')
     @classmethod

@@ -3,6 +3,8 @@
 validation_failed = 'Validation failed. Please check your input.'
 internal_server_error = 'Internal server error. Please try again later.'
 
+not_allowed_order_by = 'Not allowed order by [{field}]'
+
 token_invalid = 'Invalid token. Please log in again.'
 access_required = 'Access token is required.'
 refresh_required = 'Refresh token is required.'
