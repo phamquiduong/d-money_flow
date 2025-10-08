@@ -7,13 +7,12 @@ from services.mongodb import MongoDBService
 class UserService:
     def __init__(self, mongo: MongoDBService) -> None:
         self.mongo = mongo
-        self.model = User
 
     async def get_by_id(self, user_id: str) -> User | None:
-        return await self.mongo.find_by_id(self.model, user_id)
+        return await self.mongo.find_by_id(User, user_id)
 
     async def get_by_username(self, username: str) -> User | None:
-        return await self.mongo.find_one(self.model, username=username)
+        return await self.mongo.find_one(User, username=username)
 
     async def is_valid(self, user: User) -> bool:
         return True
@@ -30,7 +29,7 @@ class UserService:
         return user is not None
 
     async def get_list(self, limit: int, offset: int) -> list[User]:
-        return await self.mongo.find_many(self.model, limit=limit, offset=offset)
+        return await self.mongo.find_many(User, limit=limit, offset=offset)
 
     async def create(self, username: str, password: str) -> User:
         user = User(username=username)

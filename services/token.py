@@ -34,9 +34,8 @@ class JWTService:
 
 class TokenService(JWTService):
     def __init__(self, mongo: MongoDBService, *args, **kwargs) -> None:
-        self.mongo = mongo
-        self.whitelist_model = WhiteListToken
         super().__init__(*args, **kwargs)
+        self.mongo = mongo
 
     async def create_access_token(self, user: User) -> Token:
         payload = TokenPayload.access(user)
@@ -58,15 +57,15 @@ class TokenService(JWTService):
         return TokenPayload.model_validate(payload)
 
     async def is_revoke(self, jti: str) -> bool:
-        return await self.mongo.find_one(self.whitelist_model, jti=jti) is None
+        return await self.mongo.find_one(WhiteListToken, jti=jti) is None
 
     async def set_to_whitelist(self, jti: str, user_id: str, expired: datetime) -> WhiteListToken:
-        whitelist_token = self.whitelist_model(jti=jti, user_id=user_id, expired=expired)
+        whitelist_token = WhiteListToken(jti=jti, user_id=user_id, expired=expired)
         await self.mongo.insert_object(whitelist_token)
         return whitelist_token
 
     async def revoke(self, jti: str) -> None:
-        await self.mongo.delete_one(self.whitelist_model, jti=jti)
+        await self.mongo.delete_one(WhiteListToken, jti=jti)
 
     async def revoke_all(self, user_id: str) -> None:
-        await self.mongo.delete_many(self.whitelist_model, _user_id=ObjectId(user_id))
+        await self.mongo.delete_many(WhiteListToken, _user_id=ObjectId(user_id))
