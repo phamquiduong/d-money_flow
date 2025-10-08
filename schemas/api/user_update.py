@@ -3,5 +3,5 @@ from pydantic import BaseModel
 from schemas.field.username import UsernameField
 
 
-class UpdateUserRequest(BaseModel):
+class UserUpdateRequest(BaseModel):
     username: UsernameField

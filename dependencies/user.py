@@ -11,8 +11,15 @@ from dependencies.mongodb import MongoDBDep
 from exceptions.api_exception import APIException
 from schemas.user import User
 from services.token import TokenService
+from services.user import UserService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
+
+
+async def get_user_service(mongo: MongoDBDep):
+    return UserService(mongo=mongo)
+
+UserServiceDep = Annotated[UserService, Depends(get_user_service)]
 
 
 async def get_current_user(

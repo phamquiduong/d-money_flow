@@ -9,6 +9,7 @@ refresh_required = 'Refresh token is required.'
 token_revoked = 'This token has been revoked. Please log in again.'
 
 user_not_found = 'User not found.'
+user_not_valid = 'User is not valid'
 user_exists = 'User already exists.'
 admin_required = 'Admin privileges are required to perform this action.'
 current_or_admin_required = 'You must be the user or an admin to perform this action.'
